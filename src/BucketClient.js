@@ -49,7 +49,7 @@ class BucketClient {
             try{
                 options = this.cloneOptions(options)
                 const progressFunc = options["progress"]
-                options.options["progress"] = (p, cpt) => {
+                options["progress"] = (p, cpt) => {
                     checkpoint = cpt
                     progressFunc(p, cpt)
                 }
@@ -114,7 +114,7 @@ class BucketClient {
             const resource_name = [resourceOssKey, p.basename(file)].join('/')
 
             options = this.cloneOptions(options)
-            options.options["progress"] = (p, cpt) => {
+            options["progress"] = (p, cpt) => {
                 try{
                     const finsihedSize = finished + p / 100 * curSize
                     const velocity = finsihedSize / (Date.now() - beginTime)
