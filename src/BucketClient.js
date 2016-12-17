@@ -17,9 +17,28 @@ class BucketClient {
         });
     }
 
+    static buildUploadtOption(parallel=6, partSize=1024*1024,
+                progressFunc = (p, cpt) => { console.log(p, cpt)},
+                checkpoint = undefined) {
+
+        const options = {
+            parallel,
+            partSize,
+            progress: function* (p, cpt) {
+                progressFunc(p, cpt)
+            }
+        }
+        checkpoint && (options["checkpoint"] = checkpoint)
+        return options
+    }
+
+    static cloneOptions(options){
+        return Object.assign({}, options)
+    }
+
     * uploadFile(inputFilePath, resourceOssKey, options) {
         return yield this.client.multipartUpload(
-            resourceOssKey, inputFilePath, options.options)
+            resourceOssKey, inputFilePath, options)
     }
 
     * uploadFileWithRetry(inputFilePath, resourceOssKey, options,
@@ -28,7 +47,7 @@ class BucketClient {
         var checkpoint = undefined;
         while (true){
             try{
-                options = options.clone()
+                options = this.cloneOptions(options)
                 const progressFunc = options["progress"]
                 options.options["progress"] = (p, cpt) => {
                     checkpoint = cpt
@@ -73,7 +92,7 @@ class BucketClient {
         return yield this.uploadFiles(fileList, resourceOssKey, reportFunc, options)
     }
 
-    * uploadFile(fileList, resourceOssKey, reportFunc, options) {
+    * uploadFiles(fileList, resourceOssKey, reportFunc, options) {
 
         const accumulateSize = []
         for (var i in fileList){
@@ -93,8 +112,8 @@ class BucketClient {
             const curSize = accumulateSize[i] - finsihed
 
             const resource_name = [resourceOssKey, p.basename(file)].join('/')
-            // TODO: put reportFunc on option
-            options = options.clone()
+
+            options = this.cloneOptions(options)
             options.options["progress"] = (p, cpt) => {
                 try{
                     const finsihedSize = finished + p / 100 * curSize
