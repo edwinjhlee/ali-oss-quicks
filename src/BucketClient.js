@@ -18,14 +18,18 @@ class BucketClient {
     }
 
     static buildUploadtOption(parallel=6, partSize=1024*600,
-                progressFunc = (p, cpt) => { console.log(p, cpt)},
+                progressFunc = (p, cpt) => { console.log(p, cpt); return true; },
                 checkpoint = undefined) {
 
         const options = {
             parallel,
             partSize,
             progress: function *(p, cpt) {
-                progressFunc(p, cpt)
+                if (progressFunc){
+                    return yield progressFunc(p, cpt)
+                } else {
+                    return true
+                }
             }
         }
         checkpoint && (options["checkpoint"] = checkpoint)
