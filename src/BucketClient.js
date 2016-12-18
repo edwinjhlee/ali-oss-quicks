@@ -18,7 +18,7 @@ class BucketClient {
     }
 
     static buildUploadtOption(parallel=6, partSize=1024*600,
-                progressFunc = (p, cpt) => { console.log(p, cpt); return true; },
+                progressFunc,
                 checkpoint = undefined) {
 
         const options = {
@@ -38,6 +38,21 @@ class BucketClient {
 
     static cloneOptions(options){
         return Object.assign({}, options)
+    }
+
+    static enableLogToFile(dir){
+        var access = fs.createWriteStream(dir + '/node.access.log', { flags: 'a' }) 
+        var error = fs.createWriteStream(dir + '/node.error.log', { flags: 'a' })
+
+        process.stdout.pipe(access);
+        process.stderr.pipe(error);
+    }
+
+    * uploadEmptyFile(resourceOssKey){
+        return yield uploadFile( 
+            pj(__dirname, "empty_file"),
+            resourceOssKey,
+            BucketClient.buildUploadtOption() )
     }
 
     * uploadFile(inputFilePath, resourceOssKey, options) {
