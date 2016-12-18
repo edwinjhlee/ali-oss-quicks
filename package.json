@@ -1,8 +1,8 @@
 {
   "name": "ali-oss-quicks",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Providing a quick ali-oss wrappers",
-  "main": "index.js",
+  "main": "./src/BucketClient.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,15 +11,14 @@
     "url": "git+https://github.com/edwinjhlee/ali-oss-quicks.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "EdwinJhLee",
+  "license": "Apache License Version 2.0",
   "bugs": {
     "url": "https://github.com/edwinjhlee/ali-oss-quicks/issues"
   },
   "homepage": "https://github.com/edwinjhlee/ali-oss-quicks#readme",
   "dependencies": {
     "ali-oss": "^4.6.2",
-    "co": "^4.6.0",
     "fs-extra": "^1.0.0"
   }
 }

@@ -107,7 +107,6 @@ class BucketClient {
         const accumulateSize = []
         for (var i in fileList){
             accumulateSize[i] = (accumulateSize[i-1] | 0) + fs.statSync(fileList[i])["size"]
-            console.log(accumulateSize[i])
         }
 
         const totalSize = accumulateSize[accumulateSize.length-1]
@@ -124,7 +123,6 @@ class BucketClient {
 
             const progressFunc = options["progress"]
             options["progress"] = function * (p, cpt) {
-                console.log("a", p, cpt)
                 progressFunc && (yield *progressFunc(p, cpt))
                 try{
                     const elapsedTime = Date.now() - beginTime
@@ -133,7 +131,6 @@ class BucketClient {
                     const velocity = finishedSize / elapsedTime
                     const estimate = (totalSize - finishedSize) / velocity
 
-                    console.log("estimate", estimate, elapsedTime, curSize)
                     reportFunc && reportFunc(i, fileList.length, file, estimate)
                 }catch(error){
                     console.log(error)
