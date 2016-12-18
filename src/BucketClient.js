@@ -49,7 +49,7 @@ class BucketClient {
     }
 
     * uploadEmptyFile(resourceOssKey){
-        return yield uploadFile( 
+        return yield this.uploadFile( 
             pj(__dirname, "empty_file"),
             resourceOssKey,
             BucketClient.buildUploadtOption() )
