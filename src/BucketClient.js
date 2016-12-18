@@ -3,7 +3,7 @@ const REGION_LIST = {
 }
 
 const p = require("path")
-const pj = join
+const pj = p.join
 
 const fs = require("fs")
 const fse = require("fs-extra")
@@ -17,14 +17,14 @@ class BucketClient {
         });
     }
 
-    static buildUploadtOption(parallel=6, partSize=1024*1024,
+    static buildUploadtOption(parallel=6, partSize=1024*600,
                 progressFunc = (p, cpt) => { console.log(p, cpt)},
                 checkpoint = undefined) {
 
         const options = {
             parallel,
             partSize,
-            progress: function* (p, cpt) {
+            progress: function *(p, cpt) {
                 progressFunc(p, cpt)
             }
         }
@@ -37,6 +37,7 @@ class BucketClient {
     }
 
     * uploadFile(inputFilePath, resourceOssKey, options) {
+        console.log(inputFilePath, resourceOssKey, options)
         return yield this.client.multipartUpload(
             resourceOssKey, inputFilePath, options)
     }
@@ -47,16 +48,21 @@ class BucketClient {
         var checkpoint = undefined;
         while (true){
             try{
-                options = this.cloneOptions(options)
+                options = BucketClient.cloneOptions(options)
                 const progressFunc = options["progress"]
-                options["progress"] = (p, cpt) => {
+                options["progress"] = function * (p, cpt) {
                     checkpoint = cpt
-                    progressFunc(p, cpt)
+
+                    if (progressFunc !== undefined)
+                        return yield progressFunc(p, cpt)
+                    else return true
                 }
+                console.log(options)
                 return yield this.uploadFile(
                     inputFilePath, resourceOssKey, options)
             } catch(error) {
                 errorFunc(error)
+                return false
             }
         }
     }
@@ -87,8 +93,12 @@ class BucketClient {
     }
 
     // TODO: we should consider using recursive
-    * uploadFolder(prefix, resourceOssKey, reportFunc, options) {
-        const fileList = fs.readdirSync(prefix)
+    * uploadFolder(folder, resourceOssKey, reportFunc, options) {
+        const fileList = fs.readdirSync(folder)
+        for (var i in fileList){
+            const f = fileList[i]
+            fileList[i] = pj(folder, f)
+        }
         return yield this.uploadFiles(fileList, resourceOssKey, reportFunc, options)
     }
 
@@ -97,6 +107,7 @@ class BucketClient {
         const accumulateSize = []
         for (var i in fileList){
             accumulateSize[i] = (accumulateSize[i-1] | 0) + fs.statSync(fileList[i])["size"]
+            console.log(accumulateSize[i])
         }
 
         const totalSize = accumulateSize[accumulateSize.length-1]
@@ -106,24 +117,30 @@ class BucketClient {
         for (var i in fileList) {
             const file = fileList[i]
 
-            const estimate = i==='0' ? undefined : delta / i * (fileList.length - i)
+            var finished = accumulateSize[i-1] | 0
+            var curSize = accumulateSize[i] - finished
 
-            const finsihed = accumulateSize[i-1] | 0
-            const curSize = accumulateSize[i] - finsihed
+            options = BucketClient.cloneOptions(options)
 
-            const resource_name = [resourceOssKey, p.basename(file)].join('/')
-
-            options = this.cloneOptions(options)
-            options["progress"] = (p, cpt) => {
+            const progressFunc = options["progress"]
+            options["progress"] = function * (p, cpt) {
+                console.log("a", p, cpt)
+                progressFunc && (yield *progressFunc(p, cpt))
                 try{
-                    const finsihedSize = finished + p / 100 * curSize
-                    const velocity = finsihedSize / (Date.now() - beginTime)
-                    const esitmate = (totalSize - finsihedSize) / velocity 
+                    const elapsedTime = Date.now() - beginTime
+
+                    const finishedSize = finished + p * curSize
+                    const velocity = finishedSize / elapsedTime
+                    const estimate = (totalSize - finishedSize) / velocity
+
+                    console.log("estimate", estimate, elapsedTime, curSize)
                     reportFunc && reportFunc(i, fileList.length, file, estimate)
                 }catch(error){
                     console.log(error)
                 }
             }
+
+            const resource_name = [resourceOssKey, p.basename(file)].join('/')
             yield this.uploadFileWithRetry(file, resource_name, options)
         }
         return true
