@@ -90,7 +90,8 @@ class BucketClient {
 
         var result = yield this.client.list({ prefix })
 
-        var ret = [].concat(result["objects"])
+        const result_objects = result["objects"]
+        var ret = result_objects === undefined ? [] : result["objects"]
         while (result.isTruncated){
             result = yield this.client.list({
                 prefix,

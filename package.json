@@ -1,6 +1,6 @@
 {
   "name": "ali-oss-quicks",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Providing a quick ali-oss wrappers",
   "main": "./src/BucketClient.js",
   "scripts": {
