@@ -105,11 +105,27 @@ class BucketClient {
 
     // TODO: add retry
     * downloadFile(resourceOssKey, localFilePath) {
-        const tempFilePath = Math.random() + ".dy_tmp_junk"
+        const tempFilePath = Math.random() + ".tmp_junk"
         const result = yield this.client.get(resourceOssKey, tempFilePath);
 
         fse.copySync(tempFilePath, localFilePath);
         fs.unlinkSync(tempFilePath)
+    }
+
+    * catFile(resourceOssKey){
+        const tempFilePath = Math.random() + ".tmp_junk"
+        const result = yield this.client.get(resourceOssKey, tempFilePath);
+        const str = fs.readFileSync(tempFilePath,'utf-8')
+        fs.unlinkSync(tempFilePath)
+        return str
+    }
+
+    * uploadString(content, resourceOssKey){
+        const tempFilePath = Math.random() + ".tmp_junk"
+        fs.writeFileSync(tempFilePath, content)
+        yield this.uploadFileWithRetry(tempFilePath, resourceOssKey, BucketClient.buildUploadtOption())
+        fs.unlinkSync(tempFilePath)
+        return true
     }
 
     // TODO: we should consider using recursive
