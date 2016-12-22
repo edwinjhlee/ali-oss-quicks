@@ -9,7 +9,7 @@ const fs = require("fs")
 const fse = require("fs-extra")
 
 class BucketClient {
-    constructor(accessKeyId, accessKeySecret, bucket, region = REGION_LIST["shenzhen"]) {
+    constructor(accessKeyId, accessKeySecret, bucket, log = undefined, region = REGION_LIST["shenzhen"]) {
         var oss = require('ali-oss');
         this.bucket = bucket
         this.client = oss({
@@ -56,13 +56,13 @@ class BucketClient {
     }
 
     * uploadFile(inputFilePath, resourceOssKey, options) {
-        console.log(inputFilePath, resourceOssKey, options)
+        log && log(inputFilePath, resourceOssKey, options)
         return yield this.client.multipartUpload(
             resourceOssKey, inputFilePath, options)
     }
 
     * uploadFileWithRetry(inputFilePath, resourceOssKey, options,
-                errorFunc = (error) => console.log("Retry", error)) {
+                errorFunc = (error) => log && log("Retry", error)) {
         // TODO: add maximum retry times
         var checkpoint = undefined;
         while (true){
@@ -76,7 +76,7 @@ class BucketClient {
                         return yield progressFunc(p, cpt)
                     else return true
                 }
-                console.log(options)
+                log && log(options)
                 return yield this.uploadFile(
                     inputFilePath, resourceOssKey, options)
             } catch(error) {
@@ -99,7 +99,6 @@ class BucketClient {
             });
             ret = ret.concat(result["objects"])
         }
-
         return ret
     }
 
@@ -169,7 +168,7 @@ class BucketClient {
 
                     reportFunc && reportFunc(i, fileList.length, file, estimate)
                 }catch(error){
-                    console.log(error)
+                    log && log(error)
                 }
             }
 
