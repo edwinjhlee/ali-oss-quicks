@@ -63,8 +63,10 @@ class BucketClient {
 
     * uploadFileWithRetry(inputFilePath, resourceOssKey, options,
                 errorFunc = (error) => log && log("Retry", error)) {
-        // TODO: add maximum retry times
+
+        // TODO: add checkpoint
         var checkpoint = undefined;
+        var failCount = 0
         while (true){
             try{
                 options = BucketClient.cloneOptions(options)
@@ -81,7 +83,10 @@ class BucketClient {
                     inputFilePath, resourceOssKey, options)
             } catch(error) {
                 errorFunc(error)
-                return false
+                if ((retryTimes >= 0) && (failCount >= retryTimes)){
+                    return false
+                }
+                failCount ++
             }
         }
     }
