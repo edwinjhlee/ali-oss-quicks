@@ -15,6 +15,8 @@ class BucketClient {
         this.client = oss({
             accessKeyId, accessKeySecret, bucket, region
         });
+
+        this.log = log
     }
 
     static buildUploadtOption(parallel=6, partSize=1024*600,
@@ -56,13 +58,13 @@ class BucketClient {
     }
 
     * uploadFile(inputFilePath, resourceOssKey, options) {
-        log && log(inputFilePath, resourceOssKey, options)
+        this.log && this.log(inputFilePath, resourceOssKey, options)
         return yield this.client.multipartUpload(
             resourceOssKey, inputFilePath, options)
     }
 
     * uploadFileWithRetry(inputFilePath, resourceOssKey, options,
-                errorFunc = (error) => log && log("Retry", error)) {
+                errorFunc = (error) => this.log && this.log("Retry", error)) {
 
         // TODO: add checkpoint
         var checkpoint = undefined;
@@ -78,7 +80,7 @@ class BucketClient {
                         return yield progressFunc(p, cpt)
                     else return true
                 }
-                log && log(options)
+                this.log && this.log(options)
                 return yield this.uploadFile(
                     inputFilePath, resourceOssKey, options)
             } catch(error) {
@@ -173,7 +175,7 @@ class BucketClient {
 
                     reportFunc && reportFunc(i, fileList.length, file, estimate)
                 }catch(error){
-                    log && log(error)
+                    this.log && this.slog(error)
                 }
             }
 
