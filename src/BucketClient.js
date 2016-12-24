@@ -50,21 +50,36 @@ class BucketClient {
         process.stderr.pipe(error);
     }
 
-    * uploadEmptyFile(resourceOssKey){
+    * uploadEmptyFile(resourceOssKey, errorFunc = undefined, retryTimes = -1){
         return yield this.uploadFile( 
             pj(__dirname, "empty_file"),
             resourceOssKey,
-            BucketClient.buildUploadtOption() )
+            BucketClient.buildUploadtOption(),
+            errorFunc, retryTimes)
     }
 
     * uploadFile(inputFilePath, resourceOssKey, options) {
         this.log && this.log(inputFilePath, resourceOssKey, options)
+        if (options === undefined) {
+            options = BucketClient.buildUploadtOption()
+        }
         return yield this.client.multipartUpload(
             resourceOssKey, inputFilePath, options)
     }
 
-    * uploadFileWithRetry(inputFilePath, resourceOssKey, options,
-                errorFunc = (error) => this.log && this.log("Retry", error)) {
+    * uploadFileWithRetry(inputFilePath, resourceOssKey, options, errorFunc, retryTimes) {
+
+        if (options === undefined) {
+            options = BucketClient.buildUploadtOption()
+        }
+
+        if (errorFunc === undefined){
+            errorFunc = (error) => this.log && this.log("Retry", error)
+        }
+
+        if (retryTimes === undefined){
+            retryTimes = -1
+        }
 
         // TODO: add checkpoint
         var checkpoint = undefined;
@@ -126,25 +141,25 @@ class BucketClient {
         return str
     }
 
-    * uploadString(content, resourceOssKey){
+    * uploadString(content, resourceOssKey, options, errorFunc, retryTimes){
         const tempFilePath = Math.random() + ".tmp_junk"
         fs.writeFileSync(tempFilePath, content)
-        yield this.uploadFileWithRetry(tempFilePath, resourceOssKey, BucketClient.buildUploadtOption())
+        yield this.uploadFileWithRetry(tempFilePath, resourceOssKey, options, errorFunc, retryTimes)
         fs.unlinkSync(tempFilePath)
         return true
     }
 
     // TODO: we should consider using recursive
-    * uploadFolder(folder, resourceOssKey, reportFunc, options) {
+    * uploadFolder(folder, resourceOssKey, reportFunc, options, errorFunc, retryTimes) {
         const fileList = fs.readdirSync(folder)
         for (var i in fileList){
             const f = fileList[i]
             fileList[i] = pj(folder, f)
         }
-        return yield this.uploadFiles(fileList, resourceOssKey, reportFunc, options)
+        return yield this.uploadFiles(fileList, resourceOssKey, reportFunc, options, errorFunc, retryTimes)
     }
 
-    * uploadFiles(fileList, resourceOssKey, reportFunc, options) {
+    * uploadFiles(fileList, resourceOssKey, reportFunc, options, errorFunc, retryTimes) {
 
         const accumulateSize = []
         for (var i in fileList){
@@ -180,7 +195,7 @@ class BucketClient {
             }
 
             const resource_name = [resourceOssKey, p.basename(file)].join('/')
-            yield this.uploadFileWithRetry(file, resource_name, options)
+            yield this.uploadFileWithRetry(file, resource_name, options, errorFunc, retryTimes)
         }
         return true
     }
