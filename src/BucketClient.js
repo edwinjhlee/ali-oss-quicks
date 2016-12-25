@@ -95,6 +95,9 @@ class BucketClient {
                         return yield progressFunc(p, cpt)
                     else return true
                 }
+                if (checkpoint !== undefined){
+                    options["checkpoint"] = checkpoint
+                }
                 this.log && this.log(options)
                 return yield this.uploadFile(
                     inputFilePath, resourceOssKey, options)
